@@ -146,7 +146,7 @@ The script must print a JSON object to stdout on success:
 - Exit code 0 on success, non-zero on any failure.
 - All output except the final JSON goes to stderr so the JSON can be parsed from stdout.
 
-**This script is reused by the Ralph Loop** (`ralph-loop.md`) as a deterministic replacement for the setup agent's environment preparation steps. The setup agent calls `init.sh` first, then only needs to create the execution plan.
+**This script is reused by the Ralph Loop** ([`https://github.com/siisee11/ralph-loop.spec/blob/main/SPEC.md`](https://github.com/siisee11/ralph-loop.spec/blob/main/SPEC.md)) as a deterministic replacement for the setup agent's environment preparation steps. The setup agent calls `init.sh` first, then only needs to create the execution plan.
 
 ### D. Reproducibility and validation flow
 

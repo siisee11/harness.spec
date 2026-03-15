@@ -109,20 +109,17 @@ This phase encodes golden principles and builds automated garbage collection for
 
 ---
 
-## Phase 6: Ralph Loop (Autonomous Agent Loop)
+## Phase 6: Ralph Loop Prerequisite
 
 Apply the instructions in [`6_ralph-loop.md`](./6_ralph-loop.md).
 
-This phase builds the automated coding agent loop that drives a task from prompt to pull request:
+This checkpoint confirms the standalone Ralph Loop spec has already been applied before the create-harness flow is considered complete:
 
-- [ ] Go `ralph-loop` CLI entrypoint under `cmd/ralph-loop/`
-- [ ] Reusable Go Ralph Loop modules under `internal/ralphloop/`
-- [ ] Repo-root `./ralph-loop` shim that delegates to the active implementation
-- [ ] Setup, coding-loop, PR, completion-detection, and worktree-init modules
-- [ ] Optional `tail`/`ls` operational subcommands for inspecting active sessions and logs
-- [ ] `Makefile.harness` target for `ralph-loop`
-- [ ] Tests for CLI parsing, app-server client behavior, completion detection, and prompt construction
-- [ ] End-to-end verification: prompt → worktree → plan → coding iterations → commits → PR
+- [ ] [`https://github.com/siisee11/ralph-loop.spec/blob/main/SPEC.md`](https://github.com/siisee11/ralph-loop.spec/blob/main/SPEC.md) has been reviewed and applied
+- [ ] Repo-root `./ralph-loop` entrypoint is available in the target repository
+- [ ] Ralph Loop setup, coding-loop, and PR-agent orchestration are implemented
+- [ ] Ralph Loop integrates with `scripts/harness/init.sh` and `docs/exec-plans/`
+- [ ] End-to-end verification passes: prompt -> worktree -> plan -> iterations -> commits -> PR
 
 ---
 
