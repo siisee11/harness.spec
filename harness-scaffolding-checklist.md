@@ -49,7 +49,6 @@ This phase makes the app bootable per Git worktree for isolated development:
 - [ ] Launch contract returning metadata (`app_url`, `port`, `healthcheck_url`, `worktree_id`, `runtime_root`, and observability metadata when available)
 - [ ] Healthcheck-based readiness (no blind sleeps)
 - [ ] `harnesscli init` — idempotent environment initialization with JSON output contract
-- [ ] `scripts/harness/init.sh` — thin strict-mode wrapper entrypoint for automation compatibility
 - [ ] `agent-browser` skill installed for UI investigation
 - [ ] Example reproducibility and validation flow
 
@@ -118,7 +117,7 @@ This checkpoint confirms the standalone Ralph Loop spec has already been applied
 - [ ] [`https://github.com/siisee11/ralph-loop.spec/blob/main/SPEC.md`](https://github.com/siisee11/ralph-loop.spec/blob/main/SPEC.md) has been reviewed and applied
 - [ ] Repo-root `./ralph-loop` entrypoint is available in the target repository
 - [ ] Ralph Loop setup, coding-loop, and PR-agent orchestration are implemented
-- [ ] Ralph Loop integrates with `scripts/harness/init.sh` and `docs/exec-plans/`
+- [ ] Ralph Loop integrates with `harnesscli init` and `docs/exec-plans/`
 - [ ] End-to-end verification passes: prompt -> worktree -> plan -> iterations -> commits -> PR
 
 ---
@@ -138,7 +137,6 @@ This is the final phase — it verifies everything from all prior phases is wire
 - [ ] `harnesscli init`, `harnesscli boot`, and `harnesscli observability` command groups implemented
 - [ ] `harnesscli audit` — audits all files and directories exist
 - [ ] `harness/Cargo.toml` — Rust crate for the `harnesscli` CLI
-- [ ] `scripts/harness/init.sh` — strict-mode compatibility wrapper that delegates to `harnesscli init`
 - [ ] `.github/workflows/harness.yml` — CI workflow running `make ci`
 - [ ] `harnesscli` CLI builds successfully (`cargo build --release -p harness`)
 - [ ] `harness audit .` passes
