@@ -82,12 +82,14 @@ Apply the instructions in [`4_enforce-invariants.md`](./4_enforce-invariants.md)
 This phase enforces architectural boundaries and taste mechanically via custom linters and structural tests. These are the required local pre-merge checks that must pass through `harnesscli` before a change merges to `main`:
 
 - [ ] Machine-readable architecture rules file (dependency directions, allowed edges)
+- [ ] Declared domain/layer/module ownership rules for production code
 - [ ] Dependency direction linter — verifies imports respect layer ordering
+- [ ] Module boundary linter — verifies production code stays inside declared modules and crosses boundaries only through allowed entrypoints
 - [ ] Boundary parsing linter — verifies external data is validated at boundaries
 - [ ] Taste invariant linters (structured logging, naming conventions, file size limits)
 - [ ] Linter implementation is modularized by concern; avoid one monolithic `shared` helper
 - [ ] All lint error messages include clear remediation instructions for agents
-- [ ] Structural tests for domain completeness and dependency graph validation
+- [ ] Structural tests for domain completeness, module ownership, and dependency graph validation
 - [ ] Cross-cutting boundary tests (shared concerns only via Providers interface)
 - [ ] Integrated into `make lint` and `make test` as required pre-merge checks
 

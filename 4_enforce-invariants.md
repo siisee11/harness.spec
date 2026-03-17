@@ -4,7 +4,7 @@ Documentation alone doesn't keep a fully agent-generated codebase coherent. Enfo
 
 The principle: enforce boundaries centrally, allow autonomy locally. Care deeply about boundaries, correctness, and reproducibility. Within those boundaries, allow significant freedom in how solutions are expressed.
 
-This phase covers the **always-on, pre-merge enforcement layer**. The checks defined here must run through `harnesscli` locally on every branch before a change can merge to `main`. Put merge-blocking invariants here: boundary validation, dependency direction, cross-cutting boundary checks, and other structural tests that protect the repository's shape continuously.
+This phase covers the **always-on, pre-merge enforcement layer**. The checks defined here must run through `harnesscli` locally on every branch before a change can merge to `main`. Put merge-blocking invariants here: boundary validation, dependency direction, cross-cutting boundary checks, codebase modularity rules, and other structural tests that protect the repository's shape continuously.
 
 Because this phase is part of the local pre-merge workflow, the checks here must stay fast enough to run routinely on a developer machine. Prefer static analysis, bounded graph checks, and targeted structural validation over long-running end-to-end or full-runtime verification.
 
@@ -16,6 +16,7 @@ Before writing any linters or tests, map the repository's actual structure:
 
 - **Business domains**: What are the distinct domains in this codebase? (e.g., auth, billing, settings, etc.)
 - **Layers within domains**: What layers exist? Identify the dependency direction. A typical layered model looks like: `Types → Config → Repo → Service → Runtime → UI`
+- **Modules within domains**: What are the stable modules or bounded areas inside each domain? Which files belong to which module, and what is the allowed public surface for each one?
 - **Cross-cutting concerns**: What shared concerns exist? (e.g., auth, connectors, telemetry, feature flags, utils). These should enter through a single explicit interface (e.g., a Providers layer).
 - **Existing conventions**: What naming conventions, logging patterns, file organization rules, and type conventions are already in use?
 
@@ -30,14 +31,24 @@ Define which dependency directions are allowed and which are disallowed. These r
 For each business domain, specify:
 
 - The ordered set of layers and the permitted dependency direction (forward only)
+- The declared modules within that domain and which files/directories belong to each module
+- The allowed public entrypoints for each module and which imports must stay internal
 - Which cross-cutting modules can be imported and through what interface
 - What is explicitly disallowed (e.g., UI importing directly from Repo, Service importing from Runtime)
+- What structure is forbidden (e.g., uncategorized top-level feature code, catch-all `misc` modules, kitchen-sink files that mix multiple modules)
 
 Create a machine-readable rules file (e.g., `architecture.json`, `.architecture.yaml`, or similar) that encodes:
 
 ```
 {
   "layers": ["types", "config", "repo", "providers", "service", "runtime", "ui"],
+  "modules": {
+    "billing": {
+      "roots": ["src/billing"],
+      "submodules": ["invoices", "plans", "usage"],
+      "publicEntrypoints": ["src/billing/index.ts"]
+    }
+  },
   "direction": "forward",
   "crossCutting": {
     "providers": ["auth", "connectors", "telemetry", "featureFlags"]
@@ -74,6 +85,13 @@ This matters because custom linters tend to grow quickly. If all scanning logic 
 - Verify that all imports respect the allowed dependency direction
 - Flag any import that violates the rules
 
+### Module boundary linter
+
+- Verify that every production file belongs to a declared domain/layer/module from the architecture rules
+- Verify that imports cross module boundaries only through declared public entrypoints
+- Flag catch-all modules, uncategorized production directories, and files that mix responsibilities from multiple modules without an explicit boundary
+- Fail when new code is added outside the declared modular structure unless the architecture rules are updated in the same change
+
 ### Boundary parsing linter
 
 - Verify that external data is parsed and validated at boundaries (e.g., API handlers, external integrations)
@@ -88,6 +106,7 @@ Implement linters for project-specific taste rules. Examples:
 - **Naming conventions**: Schema types follow a consistent naming pattern (e.g., `*Schema`, `*Input`, `*Output`)
 - **File size limits**: No single file exceeds a configurable line count threshold
 - **No cross-layer shortcuts**: No file imports from a layer it shouldn't reach
+- **No dumping-ground modules**: Avoid `misc`, `common`, or `helpers` buckets that accumulate unrelated business logic without a declared boundary
 
 ### Error messages as remediation instructions
 
@@ -118,6 +137,12 @@ Structural tests verify the codebase's shape at test time. Place them alongside 
 - For each business domain, verify that expected layers exist (e.g., every domain has a `types/` and a `service/` directory)
 - Flag domains that are missing expected structure
 
+### Module ownership test
+
+- Verify that every production source file is owned by a declared domain/layer/module
+- Flag source files that sit outside the declared modular structure
+- Flag domains that accumulate multiple unrelated responsibilities in one module without an explicit architectural declaration
+
 ### Dependency graph test
 
 - Build an import graph of the codebase
@@ -134,6 +159,7 @@ Structural tests verify the codebase's shape at test time. Place them alongside 
 - Verify naming conventions are followed across all domains
 - Verify file organization matches the expected structure
 - Verify exported types match expected patterns
+- Verify module entrypoints and internal-only files match the declared modular boundaries
 
 ---
 
@@ -178,13 +204,14 @@ Intentionally introduce a violation (e.g., add a disallowed import) and confirm 
 
 - [ ] Machine-readable architecture rules file
 - [ ] Dependency direction linter with remediation-quality error messages
+- [ ] Module boundary linter that enforces declared domain/layer/module ownership
 - [ ] Boundary parsing linter
 - [ ] Taste invariant linters (structured logging, naming, file size, etc.)
 - [ ] Linter implementation split into focused modules rather than one monolithic helper
-- [ ] Structural tests for domain completeness, dependency graph, cross-cutting boundaries
+- [ ] Structural tests for domain completeness, module ownership, dependency graph, cross-cutting boundaries
 - [ ] Integration into `make lint` and `make test` as required local pre-merge checks
 - [ ] Local harness checks pass before merge
 
 ## Key principle
 
-Constraints are what allow speed without decay. Once encoded, they apply everywhere at once. Be prescriptive about boundaries and invariants, not about implementations.
+Constraints are what allow speed without decay. Once encoded, they apply everywhere at once. Be prescriptive about boundaries, modular structure, and invariants, not about implementations.
