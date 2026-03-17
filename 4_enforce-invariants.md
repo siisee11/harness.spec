@@ -4,6 +4,10 @@ Documentation alone doesn't keep a fully agent-generated codebase coherent. Enfo
 
 The principle: enforce boundaries centrally, allow autonomy locally. Care deeply about boundaries, correctness, and reproducibility. Within those boundaries, allow significant freedom in how solutions are expressed.
 
+This phase covers the **always-on, pre-merge enforcement layer**. The checks defined here must run through `harnesscli` locally on every branch before a change can merge to `main`. Put merge-blocking invariants here: boundary validation, dependency direction, cross-cutting boundary checks, and other structural tests that protect the repository's shape continuously.
+
+Because this phase is part of the local pre-merge workflow, the checks here must stay fast enough to run routinely on a developer machine. Prefer static analysis, bounded graph checks, and targeted structural validation over long-running end-to-end or full-runtime verification.
+
 ---
 
 ## Step 1: Understand the codebase architecture
@@ -21,7 +25,7 @@ Document the discovered architecture in `docs/ARCHITECTURE.md` if not already do
 
 ## Step 2: Define the dependency rules
 
-Define which dependency directions are allowed and which are disallowed. These rules become the source of truth for linters.
+Define which dependency directions are allowed and which are disallowed. These rules become the source of truth for the pre-merge linters and structural tests in this phase.
 
 For each business domain, specify:
 
@@ -135,33 +139,36 @@ Structural tests verify the codebase's shape at test time. Place them alongside 
 
 ## Step 5: Integrate into the harness
 
-Wire the custom linters and structural tests into the existing harness so they run automatically.
+Wire the custom linters and structural tests into the existing harness so they run automatically on every branch before merge through local `harnesscli` commands.
+
+Keep Phase 4 checks lightweight enough for repeated local use. If a check routinely takes too long to run before merge, move it out of this phase and into Phase 5's scheduled recurring cleanup flow instead of slowing down the local enforcement loop.
 
 ### Add to `harnesscli lint`
 
-The custom linters should run as part of `make lint` (which calls `harnesscli lint`). Either:
+The custom linters should run as part of `make lint` (which calls `harnesscli lint`) and must be required in the local pre-merge workflow. They should complete quickly enough to be run on every merge candidate. Either:
 - Add them as an additional pass within the `harnesscli lint` command
 - Or add a `harnesscli lint --architecture` flag and call it from the main `harnesscli lint` flow
 
 ### Add to `harnesscli test`
 
-Structural tests should run as part of `make test`. They should be fast — they analyze file structure and imports, not runtime behavior.
+Structural tests should run as part of `make test` and must also be required before merge. They should be fast — they analyze file structure and imports, not runtime behavior.
 
-### CI enforcement
+### Local enforcement
 
-The linters and structural tests must run in CI via `make ci`. If any invariant is violated, the build fails. No exceptions.
+The linters and structural tests must be runnable locally via `harnesscli` and the local make targets before merge. If any invariant is violated, the local verification fails and the change must not merge to `main`. No exceptions.
 
 ---
 
 ## Step 6: Verify
 
-Run the full harness and confirm:
+Run the local harness checks and confirm:
 
 ```bash
 make lint      # Custom linters pass
 make test      # Structural tests pass
-make ci        # Full pipeline passes
 ```
+
+These commands should be practical to run before every merge. If they are too slow for routine local use, narrow their scope or move the expensive check into the recurring cleanup system.
 
 Intentionally introduce a violation (e.g., add a disallowed import) and confirm the linter catches it with a clear, actionable error message.
 
@@ -175,8 +182,8 @@ Intentionally introduce a violation (e.g., add a disallowed import) and confirm 
 - [ ] Taste invariant linters (structured logging, naming, file size, etc.)
 - [ ] Linter implementation split into focused modules rather than one monolithic helper
 - [ ] Structural tests for domain completeness, dependency graph, cross-cutting boundaries
-- [ ] Integration into `make lint` and `make test`
-- [ ] All checks passing in `make ci`
+- [ ] Integration into `make lint` and `make test` as required local pre-merge checks
+- [ ] Local harness checks pass before merge
 
 ## Key principle
 
